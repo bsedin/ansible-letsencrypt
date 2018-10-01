@@ -1,0 +1,76 @@
+---
+- name: install python-openssl
+  apt: name=python-openssl
+
+- name: ensure ssl directory
+  file: dest={{ letsencrypt_ssl_dir }} state=directory
+
+- name: ensure challenge directories
+  file:
+    dest: '{{ letsencrypt_challenge_dir }}/{{ item.fqdn }}/.well-known/acme-challenge'
+    state: directory
+  with_items: '{{ letsencrypt_domains }}'
+
+- name: generate private keys
+  openssl_privatekey:
+    path: '{{ letsencrypt_ssl_dir }}/{{ item.fqdn }}.key'
+    size: '{{ item.private_key_size | default(letsencrypt_domain_private_key_size) }}'
+  with_items: '{{ letsencrypt_domains }}'
+
+- name: generate csr
+  openssl_csr:
+    path: '{{ letsencrypt_ssl_dir }}/{{ item.fqdn }}.csr'
+    privatekey_path: '{{ letsencrypt_ssl_dir }}/{{ item.fqdn }}.key'
+    countryName: '{{ item.country | default(letsencrypt_csr_country) }}'
+    organizationName: '{{ item.organization | default(letsencrypt_csr_organization) }}'
+    emailAddress: '{{ item.email | default(letsencrypt_csr_email) }}'
+    commonName: '{{ item.fqdn }}'
+  with_items: '{{ letsencrypt_domains }}'
+
+- name: request letsencrypt cert
+  acme_certificate:
+    acme_directory: '{{ letsencrypt_acme_directory }}'
+    account_email: '{{ letsencrypt_account_email }}'
+    account_key_content: '{{ letsencrypt_account_key_content }}'
+    csr: '{{ letsencrypt_ssl_dir }}/{{ item.fqdn }}.csr'
+    dest: '{{ letsencrypt_ssl_dir }}/{{ item.fqdn }}.crt'
+    fullchain_dest: '{{ letsencrypt_ssl_dir }}/{{ item.fqdn }}-fullchain.crt'
+    remaining_days: '{{ letsencrypt_remaining_days }}'
+  register: letsencrypt_challenge
+  with_items: '{{ letsencrypt_domains }}'
+
+- name: copy and serve challenge file
+  copy:
+    dest: "{{ letsencrypt_challenge_dir }}/{{ item.item.fqdn }}/{{ item.challenge_data[item.item.fqdn]['http-01']['resource'] }}"
+    content: "{{ item.challenge_data[item.item.fqdn]['http-01']['resource_value'] }}"
+  when: item['challenge_data'] is defined
+  with_items: '{{ letsencrypt_challenge.results }}'
+
+- name: receive letsencrypt certificate
+  acme_certificate:
+    acme_directory: '{{ letsencrypt_acme_directory }}'
+    account_key_content: '{{ letsencrypt_account_key_content }}'
+    csr: '{{ letsencrypt_ssl_dir }}/{{ item.item.fqdn }}.csr'
+    dest: '{{ letsencrypt_ssl_dir }}/{{ item.item.fqdn }}.crt'
+    fullchain_dest: '{{ letsencrypt_ssl_dir }}/{{ item.item.fqdn }}-fullchain.crt'
+    data: '{{ item }}'
+    remaining_days: '{{ letsencrypt_remaining_days }}'
+  with_items: '{{ letsencrypt_challenge.results }}'
+
+- name: clean up challenge directories
+  file:
+    dest: '{{ letsencrypt_challenge_dir }}/{{ item.fqdn }}/.well-known/acme-challenge'
+    state: absent
+  with_items: '{{ letsencrypt_domains }}'
+
+- name: generate dh param
+  openssl_dhparam:
+    path: '{{ letsencrypt_ssl_dir }}/dh.pem'
+    size: '{{ letsencrypt_dhparam_size }}'
+
+- name: create domain certificates bundle with private key and dhparam
+  shell: |
+    cat {{ letsencrypt_ssl_dir }}/{{ item.fqdn }}.key \
+        {{ letsencrypt_ssl_dir }}/{{ item.fqdn }}-fullchain.crt \
+        {{ letsencrypt_ssl_dir }}/dh.pem > {{ letsencrypt_ssl_dir }}/{{ item.fqdn }}-bundle.pem
+  with_items: '{{ letsencrypt_domains }}'

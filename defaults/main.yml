@@ -1,0 +1,21 @@
+# Required
+letsencrypt_account_email: ''
+letsencrypt_account_key_content: ''
+letsencrypt_domains: [] # letsencrypt_domains:
+                        #   - fqdn: yourserver.io
+                        #   - fqdn: subdomain.yourserver.io
+                        #     private_key_size: 4096
+                        #     organization: Your Organization Ltd.
+                        #     email: postmaster@youtserver.io
+                        #     country: UK
+letsencrypt_csr_country: ''
+letsencrypt_csr_organization: ''
+letsencrypt_csr_email: ''
+
+# Optional
+letsencrypt_ssl_dir: /etc/ssl
+letsencrypt_challenge_dir: /var/www/html
+letsencrypt_acme_directory: https://acme-staging.api.letsencrypt.org/directory
+letsencrypt_dhparam_size: 2048
+letsencrypt_domain_private_key_size: 2048
+letsencrypt_remaining_days: 10
