@@ -15,7 +15,7 @@ letsencrypt_csr_email: ''
 # Optional
 letsencrypt_ssl_dir: /etc/ssl
 letsencrypt_challenge_dir: /var/www/html
-letsencrypt_acme_directory: https://acme-staging.api.letsencrypt.org/directory
+letsencrypt_acme_directory: https://acme-staging-v02.api.letsencrypt.org/directory
 letsencrypt_dhparam_size: 2048
 letsencrypt_domain_private_key_size: 2048
 letsencrypt_remaining_days: 10

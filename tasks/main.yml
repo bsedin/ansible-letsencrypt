@@ -30,6 +30,8 @@
 - name: request letsencrypt cert
   acme_certificate:
     acme_directory: '{{ letsencrypt_acme_directory }}'
+    acme_version: 2
+    terms_agreed: yes
     account_email: '{{ letsencrypt_account_email }}'
     account_key_content: '{{ letsencrypt_account_key_content }}'
     csr: '{{ letsencrypt_ssl_dir }}/{{ item.fqdn }}.csr'
@@ -49,6 +51,8 @@
 - name: receive letsencrypt certificate
   acme_certificate:
     acme_directory: '{{ letsencrypt_acme_directory }}'
+    acme_version: 2
+    terms_agreed: yes
     account_key_content: '{{ letsencrypt_account_key_content }}'
     csr: '{{ letsencrypt_ssl_dir }}/{{ item.item.fqdn }}.csr'
     dest: '{{ letsencrypt_ssl_dir }}/{{ item.item.fqdn }}.crt'
