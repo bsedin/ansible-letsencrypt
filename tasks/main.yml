@@ -47,6 +47,8 @@
     content: "{{ item.challenge_data[item.item.fqdn]['http-01']['resource_value'] }}"
   when: item['challenge_data'] is defined
   with_items: '{{ letsencrypt_challenge.results }}'
+  loop_control:
+    label: '{{ item.item.fqdn }}'
 
 - name: receive letsencrypt certificate
   acme_certificate:
@@ -60,6 +62,8 @@
     data: '{{ item }}'
     remaining_days: '{{ letsencrypt_remaining_days }}'
   with_items: '{{ letsencrypt_challenge.results }}'
+  loop_control:
+    label: '{{ item.item.fqdn }}'
 
 - name: clean up challenge directories
   file:
