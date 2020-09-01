@@ -45,6 +45,7 @@
   copy:
     dest: "{{ letsencrypt_challenge_dir }}/{{ item.item.fqdn }}/{{ item.challenge_data[item.item.fqdn]['http-01']['resource'] }}"
     content: "{{ item.challenge_data[item.item.fqdn]['http-01']['resource_value'] }}"
+    mode: '666'
   when: item['challenge_data'] is defined
   with_items: '{{ letsencrypt_challenge.results }}'
   loop_control:
