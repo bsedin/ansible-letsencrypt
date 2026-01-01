@@ -1,6 +1,6 @@
 ---
-- name: install python-openssl
-  apt: name=python-openssl
+- name: install python3-openssl
+  apt: name=python3-openssl
 
 - name: ensure ssl directory
   file: dest={{ letsencrypt_ssl_dir }} state=directory
@@ -38,7 +38,7 @@
     dest: '{{ letsencrypt_ssl_dir }}/{{ item.fqdn }}.crt'
     fullchain_dest: '{{ letsencrypt_ssl_dir }}/{{ item.fqdn }}-fullchain.crt'
     remaining_days: '{{ letsencrypt_remaining_days }}'
-  register: letsencrypt_challenge
+  register: letsencrypt_domain_challenge
   with_items: '{{ letsencrypt_domains }}'
 
 - name: copy and serve challenge file
@@ -46,8 +46,8 @@
     dest: "{{ letsencrypt_challenge_dir }}/{{ item.item.fqdn }}/{{ item.challenge_data[item.item.fqdn]['http-01']['resource'] }}"
     content: "{{ item.challenge_data[item.item.fqdn]['http-01']['resource_value'] }}"
     mode: '666'
-  when: item['challenge_data'] is defined
-  with_items: '{{ letsencrypt_challenge.results }}'
+  when: letsencrypt_domain_challenge is changed and item['challenge_data'] is defined and item.item.fqdn in item['challenge_data']
+  with_items: '{{ letsencrypt_domain_challenge.results }}'
   loop_control:
     label: '{{ item.item.fqdn }}'
 
@@ -62,7 +62,7 @@
     fullchain_dest: '{{ letsencrypt_ssl_dir }}/{{ item.item.fqdn }}-fullchain.crt'
     data: '{{ item }}'
     remaining_days: '{{ letsencrypt_remaining_days }}'
-  with_items: '{{ letsencrypt_challenge.results }}'
+  with_items: '{{ letsencrypt_domain_challenge.results }}'
   loop_control:
     label: '{{ item.item.fqdn }}'
 
